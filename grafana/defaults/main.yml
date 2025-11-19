@@ -1,5 +1,0 @@
----
-# defaults file for grafana
-grafana_admin_user: admin
-grafana_admin_password: admin
-prometheus_server_url: "http://localhost:9090"

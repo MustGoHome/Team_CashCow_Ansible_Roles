@@ -28,6 +28,13 @@
     type: rsa
     size: 2048
     state: present
+    mode: "0644"
+
+- name: 'Deploy ssh public key'
+  ansible.builtin.shell:
+    cmd: "sshpass -p {{ root_password }} ssh-copy-id -i /root/.ssh/id_rsa.pub -o StrictHostKeyChecking=no root@{{ item }}"
+  loop: "{{ web_server }}"
+
 
 - name: 'Add service for firewalld'
   ansible.posix.firewalld:

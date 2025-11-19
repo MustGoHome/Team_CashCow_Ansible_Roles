@@ -1,0 +1,29 @@
+[Unit]
+Description=Prometheus Exporter
+After=syslog.target network.target
+
+[Service]
+{% if option_key == 3%}
+User=root
+Group=root
+{% else %}
+User={{ prometheus_account }}
+Group={{ prometheus_account }}
+{% endif %}
+
+Type=simple
+
+{% if option_key == 1 %}
+ExecStart={{ exporter_directory }}/mysqld_exporter --config.my-cnf=/etc/my.cnf
+{% elif option_key == 2 %}
+ExecStart={{ exporter_directory }}/apache_exporter --scrape_uri=http://127.0.0.1/server-status?auto
+{% elif option_key == 3 %}
+ExecStart={{ exporter_directory }}/prometheus --config.file={{ exporter_directory }}/prometheus.yml
+{% elif option_key == 4 %}
+ExecStart={{ exporter_directory }}/redis_exporter
+{% else %}
+ExecStart={{ exporter_directory }}/node_exporter
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

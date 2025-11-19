@@ -1,9 +1,0 @@
----
-# handlers file for grafana
-- name: Start grafana-server
-  ansible.builtin.systemd:
-    name: grafana-server
-    state: started
-    enabled: true
-    daemon-reload: true
-

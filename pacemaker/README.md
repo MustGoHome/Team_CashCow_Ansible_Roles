@@ -1,43 +1,34 @@
-Role Name
-=========
+# 🐧 Role: pacemaker
 
-- HybridCloud05 Ansible Role - `pacemaker`
+## 🔧 Role Variables
+- **cluster_host**:  
+  - `web01.hb05.local`  
+  - `web02.hb05.local`
 
-Role Variables
-=========
+## 🔐 Secrets
+- **hacluster_password**: `redhat`
 
-**Variables**
-- cluster_host:
-    - web01.hb05.local
-    - web02.hb05.local
-
-**Secrets**
-- hacluster_password: redhat
-
-Example Playbook
-=========
-
-```
+## ▶️ Example Playbook
+```yaml
 ---
-- name: 'Configure pacemaker cluster'
+- name: "Configure pacemaker cluster"
   hosts: web
   vars_files:
     - cluster_password.yml
   tasks:
-    - name: 'Role - pacemaker'
+    - name: "Role - pacemaker"
       ansible.builtin.include_role:
         name: pacemaker
 
-- name: 'Configure database cluster'
+- name: "Configure database cluster"
   hosts: database
   vars_files:
     - cluster_password.yml
   tasks:
-    - name: 'Role - pacemaker'
+    - name: "Role - pacemaker"
       ansible.builtin.include_role:
         name: pacemaker
       vars:
         cluster_host:
           - db01.hb05.local
           - db02.hb05.local
-```

@@ -83,7 +83,7 @@
     state: present
     name: ha_mariadb
     resource_type:
-      resource_name: mysql
+      resource_name: ocf:heartbeat:mysql
     resource_option:
       - "config=/etc/my.cnf"
       - "datadir={{ iscsi_directory }}/mysql"

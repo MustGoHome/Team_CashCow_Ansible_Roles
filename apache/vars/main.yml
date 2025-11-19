@@ -9,3 +9,4 @@ packages:
   - python3.11-devel
   - gcc
   - python3-devel
+  - redis

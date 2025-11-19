@@ -124,19 +124,19 @@ ServerName {{ apache_name }}
 # documents. By default, all requests are taken from this directory, but
 # symbolic links and aliases may be used to point to other locations.
 #
-DocumentRoot "/var/www/html"
+DocumentRoot "{{ web_dir }}"
 
 #
 # Relax access to content within /var/www.
 #
-<Directory "/var/www">
+<Directory "/">
     AllowOverride None
     # Allow open access:
-    Require all granted
+    Require all denied
 </Directory>
 
 # Further relax access to the default document root:
-<Directory "/var/www/html">
+<Directory "{{ web_dir }}">
     #
     # Possible values for the Options directive are "None", "All",
     # or any combination of:
@@ -149,7 +149,7 @@ DocumentRoot "/var/www/html"
     # http://httpd.apache.org/docs/2.4/mod/core.html#options
     # for more information.
     #
-    Options Indexes FollowSymLinks
+    Options FollowSymLinks
 
     #
     # AllowOverride controls what directives may be placed in .htaccess files.
@@ -359,3 +359,6 @@ EnableSendfile on
 #
 # Load config files in the "/etc/httpd/conf.d" directory, if any.
 IncludeOptional conf.d/*.conf
+
+ServerTokens Prod
+ServerSignature Off

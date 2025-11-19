@@ -13,13 +13,25 @@
     group: root
     mode: '0644'
 
-- name: 'Deploy /etc/httpd/conf.d/django.conf'
-  ansible.builtin.template:
-    src: django.conf.j2
-    dest: /etc/httpd/conf.d/django.conf
+- name: 'Create apache status url'
+  ansible.builtin.blockinfile:
+    path: /etc/httpd/conf.d/status.conf
+    block: |
+      <Location /server-status>
+        SetHandler server-status
+        Require ip 127.0.0.1
+      </Location>
+      ExtendedStatus On
     owner: root
     group: root
     mode: '0644'
+    create: true
+
+- name: 'Restart redis'
+  ansible.builtin.systemd:
+    name: redis
+    state: restarted
+    enabled: true
 
 - name: 'Add service for firewalld'
   ansible.posix.firewalld:

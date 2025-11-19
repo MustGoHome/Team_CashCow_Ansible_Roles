@@ -1,52 +1,35 @@
-# {{ ansible_managed }}
-# Prometheus Server main configuration file
-
+# my global config
 global:
-  scrape_interval: 15s
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
 
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
 scrape_configs:
-  # Prometheus 자체 모니터링
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: "prometheus"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
     static_configs:
-      - targets: ["localhost:{{ prometheus_web_port }}"]
+  {% for target in targets %}
+    - targets: ["{{ target.ip }}:{{ target.port }}"]
+        labels:
+          app: "{{ target.app_label }}"
+          server_name: "{{ target.name }}"
+  {% endfor %}
 
-  # Node Exporter 모니터링
-  - job_name: "node_exporter"
-    static_configs:
-      - targets: ["localhost:9100"]
-
-  # Blackbox Exporter를 사용한 ICMP 핑 체크 작업
-  - job_name: "blackbox_icmp"
-    metrics_path: /probe
-    params:
-      module: [icmp]
-    
-    # File Service Discovery (File SD) 설정
-    file_sd_configs:
-      - files:
-          - "{{ prometheus_targets_dir }}/icmp_targets.json" # 변수 활용
-        refresh_interval: 10s
-
-    # Relabeling 규칙 (File SD 타겟을 Blackbox Exporter로 라우팅)
-    relabel_configs:
-      # 1. File SD에서 가져온 IP에 포트가 없으면 임시 포트(:80)를 붙여 유효한 타겟으로 만듦 (Port Appending)
-      - source_labels: [__address__]
-        target_label: __address__
-        separator: ;
-        regex: '([^:]+)'
-        replacement: '$1:80'
-        action: replace
-
-      # 2. 임시 포트가 붙은 __address__를 __param_target (실제 핑 칠 IP)에 복사
-      - source_labels: [__address__]
-        target_label: __param_target
-        regex: '([^:]+).*'
-        replacement: '$1'
-
-      # 3. name 라벨을 최종 instance 라벨에 복사
-      - source_labels: [name]
-        target_label: instance
-
-      # 4. 최종 __address__를 Blackbox Exporter 주소로 덮어쓰기
-      - target_label: __address__
-        replacement: "{{ prometheus_blackbox_exporter_address }}" # 변수 활용

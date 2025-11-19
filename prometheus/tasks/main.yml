@@ -1,98 +1,55 @@
 ---
-# tasks file for prometheus role
-
-- name: Create Prometheus system user ({{ prometheus_user }})
+# tasks file for prometheus-exporter
+- name: 'Create prometheus account'
   ansible.builtin.user:
-    name: "{{ prometheus_user }}"
-    group: "{{ prometheus_group }}"
-    home: "{{ prometheus_home }}"
-    shell: "{{ prometheus_shell }}"
-    create_home: false
+    name: "{{ prometheus_account }}"
+    shell: /sbin/nologin
     system: true
     state: present
 
-- name: Create Prometheus configuration, data, and targets directories
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ prometheus_user }}"
-    group: "{{ prometheus_group }}"
-    mode: '0755'
-  loop:
-    - "{{ prometheus_config_dir }}"
-    - "{{ prometheus_data_dir }}"
-    - "{{ prometheus_targets_dir }}"
-
-- name: Download Prometheus binary
-  ansible.builtin.get_url:
-    url: "{{ prometheus_download_url }}"
-    dest: "/tmp/{{ prometheus_tarball }}"
-    mode: '0644'
-    # checksum: "sha256:{{ prometheus_checksum }}" # 변수 활용 가능
-    # creates: "/tmp/{{ prometheus_tarball }}"
-
-- name: Unarchive Prometheus binary
+- name: 'Download exporter source'
   ansible.builtin.unarchive:
-    src: "/tmp/{{ prometheus_tarball }}"
-    dest: /tmp
+    src: "{{ exporter_packages }}"
+    dest: /usr/local/
+    owner: "{{ prometheus_account }}"
+    group: "{{ prometheus_account }}"
     remote_src: true
-    creates: "{{ prometheus_extract_dir }}/prometheus"
 
-- name: Copy prometheus and promtool binaries to {{ prometheus_bin_dir }}
-  ansible.builtin.copy:
-    src: "{{ prometheus_extract_dir }}/{{ item }}"
-    dest: "{{ prometheus_bin_dir }}/"
-    owner: "{{ prometheus_user }}"
-    group: "{{ prometheus_group }}"
-    mode: '0755'
-    remote_src: true
-  loop:
-    - prometheus
-    - promtool
+- name: 'Rename exporter directory'
+  ansible.builtin.shell: "mv /usr/local/{{ base_dir }} {{ exporter_directory }}"
 
-# --------------------------------------------------------------------------
-# 서비스 등록 및 설정 배포
-# --------------------------------------------------------------------------
-
-- name: Deploy Prometheus systemd service file
+- name: "Deploy /usr/lib/systemd/system/{{ exporter_service }}.service"
   ansible.builtin.template:
-    src: prometheus.service.j2
-    dest: /etc/systemd/system/prometheus.service
+    src: exporter.service.j2
+    dest: "/usr/lib/systemd/system/{{ exporter_service }}.service"
     owner: root
     group: root
-    mode: '0644'
-  notify: Daemon reload
+    mode: '0755'
+  notify: Restart exporter
 
-- name: Deploy Prometheus main configuration file (prometheus.yml)
+- name: 'Add prometheus account in my.cnf'
+  ansible.builtin.blockinfile:
+    path: /etc/my.cnf
+    block: |
+      [client]
+      user=prometheus
+      password=centos
+  when: option_key == 1
+
+- name: "Deploy prometheus.yml"
   ansible.builtin.template:
     src: prometheus.yml.j2
-    dest: "{{ prometheus_config_dir }}/prometheus.yml"
-    owner: "{{ prometheus_user }}"
-    group: "{{ prometheus_group }}"
+    dest: "{{ exporter_directory }}/prometheus.yml"
+    owner: "{{ prometheus_account }}"
+    group: "{{ prometheus_account }}"
     mode: '0644'
-  notify: Restart prometheus
+  when: option_key == 3
 
-- name: Deploy ICMP targets File SD configuration (icmp_targets.json)
-  ansible.builtin.template:
-    src: icmp_targets.json.j2
-    dest: "{{ prometheus_targets_dir }}/icmp_targets.json"
-    owner: "{{ prometheus_user }}"
-    group: "{{ prometheus_group }}"
-    mode: '0644'
-  notify: Reload prometheus
-
-- name: Ensure Prometheus service is started and enabled (like mariadb)
-  ansible.builtin.systemd:
-    name: prometheus
-    state: started
-    enabled: true
-  # 'Restart prometheus' 핸들러가 없더라도 이 태스크가 서비스를 확실히 실행합니다.
-
-- name: Add service for firewalld ({{ prometheus_web_port }})
+- name: Add service for firewalld
   ansible.posix.firewalld:
     port: "{{ item }}"
     permanent: true
     immediate: true
     state: enabled
   loop:
-    - "{{ prometheus_web_port }}/tcp"
+    - "{{ exporter_port }}/tcp"

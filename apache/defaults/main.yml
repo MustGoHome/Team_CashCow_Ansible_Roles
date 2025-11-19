@@ -1,12 +1,6 @@
 ---
 # defaults file for apache
 apache_listen: 80
-apache_name: "apache.example.com:{{ apache_listen }}"
+apache_name: "web.hb05.local:{{ apache_listen }}"
 
-static_url: /static
-static_path: /data/monthly_challenges/staticfiles
-
-uvicorn_listen: 8000
-
-errorlog: /var/log/httpd/django_error.log
-accesslog: /var/log/httpd/django_access.log
+web_dir: /data

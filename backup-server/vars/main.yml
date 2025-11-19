@@ -1,0 +1,5 @@
+---
+# vars file for bakcup-server
+borg_packages:
+  - borgbackup
+  - borgmatic

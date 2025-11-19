@@ -6,3 +6,7 @@ rpm_key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
 
 jenkins_port: 8080
 java_path: /usr/lib/jvm/java-21-openjdk-21.0.8.0.9-1.el9.x86_64/bin/java
+
+web_server:
+  - 172.16.6.121
+  - 172.16.6.122

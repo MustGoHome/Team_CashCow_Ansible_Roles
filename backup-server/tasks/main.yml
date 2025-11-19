@@ -1,0 +1,19 @@
+---
+# tasks file for bakcup-server
+- name: 'Install packages'
+  ansible.builtin.yum:
+    name:
+      - epel-release
+    state: present
+
+- name: 'Install packages'
+  ansible.builtin.yum:
+    name: "{{ borg_packages }}"
+    state: present
+
+- name: 'Add backup user'
+  ansible.builtin.user:
+    name: borg
+    groups: wheel
+    password: "{{ user_password | password_hash('sha512')}}"
+    state: present
