@@ -135,6 +135,14 @@ DocumentRoot "{{ web_dir }}"
     Require all denied
 </Directory>
 
+Alias /icons "{{ web_dir }}/icons"
+
+<Directory "{{ web_dir }}/icons">
+    Options FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
 # Further relax access to the default document root:
 <Directory "{{ web_dir }}">
     #

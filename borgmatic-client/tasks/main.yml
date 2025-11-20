@@ -1,0 +1,73 @@
+---
+# Borgmatic 설정 디렉터리
+- name: Ensure borgmatic config directory
+  ansible.builtin.file: 
+    path: /etc/borgmatic.d
+    state: directory
+    owner: "{{ borg_user }}"
+    group: "{{ borg_group }}"
+    mode: '0700'
+
+# 운영체제 백업 설정 파일 추가
+- name: Add borgmatic os backup config file
+  ansible.builtin.template: 
+    src: os-backup.yml.j2
+    dest: /etc/borgmatic.d/os-backup.yml 
+    owner: "{{ borg_user }}"
+    group: "{{ borg_group }}"
+    mode: '0644'
+
+# 데이터 백업 설정 파일 추가
+- name: Add borgmatic data config file
+  ansible.builtin.template: 
+    src: "{{ data_backup_template }}"
+    dest: /etc/borgmatic.d/data-backup.yaml
+    owner: "{{ borg_user }}"
+    group: "{{ borg_group }}"
+    mode: '0600'
+  when: ansible_facts.hostname in ['web01.hb05.local', 'db01.hb05.local']
+
+# 백업 디렉터리 생성 (클라이언트 → 서버 SSH)
+- name: 'Create system backup directory on backup server (via expect)'
+  ansible.builtin.expect:
+    command: >
+      ssh -o StrictHostKeyChecking=no {{ borg_user }}@{{ backup_server }}
+      sudo mkdir -p {{ backup_dir }}/{{ ansible_facts.hostname }}/os &&
+      sudo chown -R {{ borg_user }}:{{ borg_group }} {{ backup_dir }}/{{ ansible_facts.hostname }} &&
+      sudo chmod -R 744 {{ backup_dir }}/{{ ansible_facts.hostname }}
+    responses:
+      '(?i)password': "{{ user_password }}"
+  become_user: "{{ borg_user }}"
+
+# 데이터 백업 디렉터리 생성 (클라이언트 → 서버 SSH)
+- name: 'Create data backup directory on backup server (via expect)'
+  ansible.builtin.expect:
+    command: >
+      ssh -o StrictHostKeyChecking=no {{ borg_user }}@{{ backup_server }}
+      sudo mkdir -p {{ backup_dir }}/{{ ansible_facts.hostname }}/data &&
+      sudo chown -R {{ borg_user }}:{{ borg_group }} {{ backup_dir }}/{{ ansible_facts.hostname }} &&
+      sudo chmod -R 744 {{ backup_dir }}/{{ ansible_facts.hostname }}
+    responses:
+      '(?i)password': "{{ user_password }}"
+  become_user: "{{ borg_user }}"
+  when: ansible_facts.fqdn in ['web01.hb05.local', 'db01.hb05.local']
+
+# 운영체제 백업 디렉터리 초기화 
+- name: 'Initialize os backup directory'
+  ansible.builtin.expect:
+    command: "ssh -i /home/{{ borg_user }}/.ssh/id_rsa -o StrictHostKeyChecking=no {{ borg_user }}@{{ backup_server }} borg init --encryption={{ borg_encryption }} {{ backup_dir }}/{{ ansible_facts.hostname }}/os"
+    responses:
+      'Enter new passphrase': "{{ borg_passphrase }}"
+      'Enter same passphrase again': "{{ borg_passphrase }}"
+      'Do you want your passphrase to be displayed for verification?': 'y'
+  become_user: "{{ borg_user }}"
+
+# 데이터 백업 디렉터리 초기화 
+- name: 'Initialize os backup directory'
+  ansible.builtin.expect:
+    command: "ssh -i /home/{{ borg_user }}/.ssh/id_rsa -o StrictHostKeyChecking=no {{ borg_user }}@{{ backup_server }} borg init --encryption={{ borg_encryption }} {{ backup_dir }}/{{ ansible_facts.hostname }}/data"
+    responses:
+      'Enter new passphrase': "{{ borg_passphrase }}"
+      'Enter same passphrase again': "{{ borg_passphrase }}"
+      'Do you want your passphrase to be displayed for verification?': 'y'
+  become_user: "{{ borg_user }}"

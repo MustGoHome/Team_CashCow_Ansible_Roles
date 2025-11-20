@@ -1,0 +1,31 @@
+location:
+  source_directories:
+    - /etc
+    - /boot
+    - /home
+    - /root
+    - /usr
+    - /var/lib
+    - /var/spool
+    - /var/log
+  repositories:
+    - {{ borg_user }}@{{ backup_server }}:{{ backup_dir }}/{{ ansible_facts.hostname }}/os
+
+storage:
+  encryption_passphrase: {{ borg_passphrase }}
+  compression: lzma
+  ssh_command: "ssh -i /home/{{ borg_user }}/.ssh/id_rsa -o StrictHostKeyChecking=no"
+
+retention:
+  keep_monthly: 9
+
+consistency:
+  checks:
+    - repository
+    - archives
+
+hooks:
+  before_backup:
+    - echo "[ INFO ] Starting OS Backup"
+  after_backup:
+    - echo "[ INFO ] OS Backup Completed"

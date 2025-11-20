@@ -1,0 +1,25 @@
+location:
+  source_directories:
+    - /data
+  repositories:
+    - {{ borg_user }}@{{ backup_server }}:{{ backup_dir }}/{{ ansible_facts.hostname }}/data
+
+storage:
+  encryption_passphrase: {{ borg_passphrase }}
+  compression: lzma  
+  ssh_command: "ssh -i /home/{{ borg_user }}/.ssh/id_rsa -o StrictHostKeyChecking=no"
+
+retention:
+  keep_daily: 30
+
+consistency:
+  checks:
+    - repository  # 백업 저장소 무결성 검사
+    - archives    # 아카이브 파일 무결성 검사
+    - extract     # 복원 가능 여부 검사
+
+hooks:
+  before_backup:
+    - echo "[ INFO ] Starting WEB DATA Backup"
+  after_backup:
+    - echo "[ INFO ] WEB DATA Backup Completed"

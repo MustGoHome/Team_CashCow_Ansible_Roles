@@ -1,0 +1,2 @@
+---
+data_backup_template: 'db-backup.yml.j2'

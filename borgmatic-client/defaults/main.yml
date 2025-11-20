@@ -1,0 +1,8 @@
+backup_server: 192.168.10.10
+
+borg_encryption: repokey
+backup_dir: /data
+borg_passphrase: borg
+
+borg_user: borg
+borg_group: borg
